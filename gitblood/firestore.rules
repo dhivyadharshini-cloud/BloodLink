@@ -1,0 +1,163 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Fields:
+    //   - uid: string (required)
+    //   - name: string (required, 1-100 chars)
+    //   - email: string (required, valid email)
+    //   - role: string (required, enum: ['donor', 'hospital', 'admin'])
+    //   - bloodGroup: string (optional, enum: ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'])
+    //   - location: map (optional, {lat: number, lng: number})
+    //   - lastDonationDate: timestamp (optional)
+    //   - reliabilityRating: number (optional, 0-100)
+    //   - isEligible: bool (optional)
+    //
+    // Collection: hospitals
+    // Fields:
+    //   - uid: string (required)
+    //   - name: string (required)
+    //   - location: map (required, {lat: number, lng: number})
+    //   - address: string (optional)
+    //   - bloodStock: map (optional, bloodGroup -> count)
+    //
+    // Collection: requests
+    // Fields:
+    //   - hospitalUid: string (required)
+    //   - hospitalName: string (required)
+    //   - bloodGroup: string (required)
+    //   - unitsRequired: number (required, > 0)
+    //   - urgency: string (required, enum: ['emergency', 'urgent', 'routine'])
+    //   - status: string (required, enum: ['open', 'fulfilled', 'closed'])
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: donations
+    // Fields:
+    //   - donorUid: string (required)
+    //   - hospitalUid: string (required)
+    //   - requestId: string (optional)
+    //   - status: string (required, enum: ['accepted', 'completed', 'no-show'])
+    //   - timestamp: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+         (request.auth.token.email == "naveenchandrasekar21@gmail.com" && request.auth.token.email_verified == true));
+    }
+
+    function isHospital() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'hospital';
+    }
+
+    function isDonor() {
+      return isAuthenticated() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'donor';
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function hasOnlyAllowedFields(fields) {
+      return request.resource.data.keys().hasOnly(fields);
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return hasOnlyAllowedFields(['uid', 'name', 'email', 'role', 'bloodGroup', 'location', 'lastDonationDate', 'reliabilityRating', 'isEligible', 'notifications', 'updatedAt', 'displayName', 'noShowCount', 'isFlagged', 'hospitalName', 'hospitalRegNo', 'address', 'city', 'beds', 'rating', 'bloodBank', 'emergency', 'badge', 'createdAt', 'phone', 'bloodStock']) &&
+             data.uid is string && data.uid.size() > 0 &&
+             data.role in ['donor', 'hospital', 'admin', 'user'];
+    }
+
+    function isValidHospital(data) {
+      return hasOnlyAllowedFields(['uid', 'name', 'location', 'address', 'bloodStock']) &&
+             data.uid is string && data.name is string &&
+             data.location.lat is number && data.location.lng is number;
+    }
+
+    function isValidRequest(data) {
+      return hasOnlyAllowedFields(['hospitalId', 'hospitalName', 'bloodGroup', 'unitsNeeded', 'unitsMatched', 'urgency', 'status', 'location', 'createdAt', 'expiresAt']) &&
+             data.hospitalId is string && data.hospitalName is string &&
+             data.bloodGroup in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] &&
+             data.unitsNeeded is number && data.unitsNeeded > 0 &&
+             data.urgency in ['critical', 'urgent', 'standard'] &&
+             data.status in ['pending', 'fulfilled', 'closed'] &&
+             data.createdAt is number;
+    }
+
+    function isValidDonation(data) {
+      return hasOnlyAllowedFields(['donorId', 'hospitalId', 'requestId', 'status', 'createdAt', 'updatedAt']) &&
+             data.donorId is string && data.hospitalId is string &&
+             data.status in ['accepted', 'arrived', 'completed', 'no-show'] &&
+             data.createdAt is number;
+    }
+
+    // ===============================================================
+    // Match Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      // Users can read their own profile. Admins can read all.
+      // Hospitals can read donor profiles
+      allow read: if isOwner(userId) || isAdmin() || isHospital();
+      
+      // Create profile on first login
+      allow create: if isOwner(userId) && isValidUser(request.resource.data) && request.resource.data.role != 'admin';
+      
+      // Update profile
+      // Allow hospitals to update donor profiles for donation completion
+      allow update: if (isOwner(userId) || isHospital()) && isValidUser(request.resource.data);
+      
+      // Admin can do anything
+      allow write: if isAdmin();
+    }
+
+    match /hospitals/{hospitalId} {
+      // Allow public read for hospitals
+      allow read: if true;
+      allow write: if isAdmin() || (isHospital() && request.auth.uid == hospitalId);
+    }
+
+    match /requests/{requestId} {
+      // Allow public read for requests so they can be seen on the landing page
+      allow read: if true;
+      allow create: if isHospital() && request.resource.data.hospitalId == request.auth.uid && isValidRequest(request.resource.data);
+      allow update: if (isHospital() && resource.data.hospitalId == request.auth.uid && isValidRequest(request.resource.data)) || isAdmin();
+      allow delete: if isAdmin() || (isHospital() && resource.data.hospitalId == request.auth.uid);
+    }
+
+    match /donations/{donationId} {
+      // Allow public read for completed donations for the impact feed
+      // Otherwise, only the donor, hospital, or admin can read
+      allow read: if resource.data.status == 'completed' || (isAuthenticated() && (request.auth.uid == resource.data.donorId || request.auth.uid == resource.data.hospitalId || isAdmin()));
+      allow create: if isDonor() && request.resource.data.donorId == request.auth.uid && isValidDonation(request.resource.data);
+      allow update: if isAuthenticated() && (request.auth.uid == resource.data.donorId || request.auth.uid == resource.data.hospitalId || isAdmin()) && isValidDonation(request.resource.data);
+    }
+
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

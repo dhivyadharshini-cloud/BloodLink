@@ -1,0 +1,105 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the Bloodlink platform, can be a donor or hospital representative.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique identifier from Firebase Auth" },
+        "name": { "type": "string", "description": "Full name of the user" },
+        "email": { "type": "string", "format": "email", "description": "Email address" },
+        "role": { "type": "string", "enum": ["donor", "hospital", "admin"], "description": "User role" },
+        "bloodGroup": { "type": "string", "enum": ["A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"], "description": "Blood group of the donor" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "lastDonationDate": { "type": "string", "format": "date-time", "description": "Timestamp of the last successful donation" },
+        "reliabilityRating": { "type": "number", "description": "Score from 0-100 based on donation history" },
+        "isEligible": { "type": "boolean", "description": "Whether the donor is currently eligible to donate" },
+        "bloodStock": {
+          "type": "object",
+          "description": "Map of blood groups to current unit counts (for hospitals)"
+        }
+      },
+      "required": ["uid", "name", "email", "role"]
+    },
+    "Hospital": {
+      "title": "Hospital",
+      "description": "Hospital details and blood stock information.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" }
+          }
+        },
+        "address": { "type": "string" },
+        "bloodStock": {
+          "type": "object",
+          "description": "Map of blood groups to current unit counts"
+        }
+      },
+      "required": ["uid", "name", "location"]
+    },
+    "Request": {
+      "title": "Blood Request",
+      "description": "An active request for blood units from a hospital.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "hospitalId": { "type": "string" },
+        "hospitalName": { "type": "string" },
+        "bloodGroup": { "type": "string" },
+        "unitsNeeded": { "type": "number" },
+        "unitsMatched": { "type": "number" },
+        "urgency": { "type": "string", "enum": ["critical", "urgent", "standard"] },
+        "status": { "type": "string", "enum": ["pending", "fulfilled", "closed"] },
+        "location": { "type": "object" },
+        "createdAt": { "type": "number" },
+        "expiresAt": { "type": "number" }
+      },
+      "required": ["hospitalId", "bloodGroup", "unitsNeeded", "status", "createdAt"]
+    },
+    "Donation": {
+      "title": "Donation Record",
+      "description": "A record of a donation attempt or completion.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "donorId": { "type": "string" },
+        "hospitalId": { "type": "string" },
+        "requestId": { "type": "string" },
+        "status": { "type": "string", "enum": ["accepted", "arrived", "completed", "no-show"] },
+        "createdAt": { "type": "number" },
+        "updatedAt": { "type": "number" }
+      },
+      "required": ["donorId", "hospitalId", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profiles"
+    },
+    "/hospitals/{hospitalId}": {
+      "schema": "Hospital",
+      "description": "Hospital profiles and inventory"
+    },
+    "/requests/{requestId}": {
+      "schema": "Request",
+      "description": "Active blood requests"
+    },
+    "/donations/{donationId}": {
+      "schema": "Donation",
+      "description": "Donation history and tracking"
+    }
+  }
+}

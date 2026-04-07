@@ -1,0 +1,5 @@
+{
+  "name": "Bloodlink!",
+  "description": "Bridging the Gap Between a Heartbeat and a Hero. A real-time blood donation and emergency response platform.",
+  "requestFramePermissions": ["geolocation"]
+}
