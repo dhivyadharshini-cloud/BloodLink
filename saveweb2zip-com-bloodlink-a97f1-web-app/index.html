@@ -1,0 +1,293 @@
+<!DOCTYPE html><html lang="en"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BloodLink Pro | Specialized Biomedical Logistics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; scroll-behavior: smooth; }
+        .modal { display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); z-index: 100; align-items: center; justify-content: center; }
+        .modal.active { display: flex; }
+        .floating-btn { position: fixed; right: 20px; bottom: 40px; display: flex; flex-direction: column; gap: 12px; z-index: 99; }
+        .ruby-btn { background-color: #9B111E; color: white; width: 55px; height: 55px; display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 25px rgba(155, 17, 30, 0.4); border-radius: 50%; cursor: pointer; transition: 0.3s; font-size: 20px; }
+        .ruby-btn:hover { transform: scale(1.1); background-color: #7A0D18; }
+        .toast { position: fixed; top: 20px; right: 20px; background: #1e293b; color: white; padding: 16px 24px; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.2); z-index: 1000; display: none; }
+        .custom-scroll::-webkit-scrollbar { width: 4px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        #donorDot { transition: all 1s linear; }
+    </style>
+</head>
+<body class="bg-[#F8FAFC] text-slate-900 selection:bg-red-100 selection:text-red-600">
+
+    <div id="toast" class="toast font-bold text-xs uppercase tracking-widest">Notification Message</div>
+
+    <div class="floating-btn">
+        <div class="ruby-btn">🆘</div>
+        <div class="ruby-btn">🚑</div>
+        <div class="ruby-btn">👨‍⚕️</div>
+    </div>
+
+    <nav class="flex justify-between items-center px-6 md:px-16 py-5 sticky top-0 bg-white/90 backdrop-blur-md z-50 border-b border-slate-100">
+        <div class="flex items-center gap-3">
+            <span class="text-2xl font-black tracking-tighter uppercase text-slate-800 italic">Blood<span class="text-red-600">Link</span></span>
+        </div>
+        <div class="hidden md:flex gap-8 text-slate-500 font-bold text-[10px] uppercase tracking-widest">
+            <a href="#" class="hover:text-red-600 transition">Home</a>
+            <a href="#find-donors" class="hover:text-red-600 transition">Find Donors</a>
+            <a href="#broadcast" class="hover:text-red-600 transition">Broadcast</a>
+            <a href="#network" class="hover:text-red-600 transition">Network</a>
+        </div>
+        <button class="bg-slate-900 text-white px-6 py-2 rounded-xl font-bold text-[10px] uppercase tracking-widest hover:bg-red-600">Sign In</button>
+    </nav>
+
+    <div id="quizModal" class="modal px-6">
+        <div class="bg-white p-10 rounded-[3rem] w-full max-w-lg shadow-2xl relative border-t-[12px] border-red-600">
+            <h2 class="text-2xl font-black text-slate-800 uppercase italic mb-4">Eligibility Screening</h2>
+            <div class="space-y-4 mb-8">
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                    <span class="font-bold text-sm">Have you donated in the last 3 months?</span>
+                    <input type="checkbox" class="w-5 h-5 accent-red-600" id="q1">
+                </div>
+                <div class="flex items-center justify-between p-4 bg-slate-50 rounded-2xl">
+                    <span class="font-bold text-sm">Any recent fever or medications?</span>
+                    <input type="checkbox" class="w-5 h-5 accent-red-600" id="q2">
+                </div>
+            </div>
+            <button id="submitQuizBtn" class="w-full py-4 bg-red-600 text-white rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-slate-900 transition">Verify & Accept</button>
+        </div>
+    </div>
+
+    <main class="max-w-7xl mx-auto px-6 md:px-16 py-12 lg:py-20 grid lg:grid-cols-2 gap-16 items-center">
+        <div>
+            <span class="bg-red-50 text-red-600 px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest mb-6 inline-block">Tamil Nadu's Largest Network</span>
+            <h1 class="text-6xl md:text-8xl font-black leading-[0.9] tracking-tighter text-slate-900">Saving <br> <span class="text-red-600 italic underline decoration-slate-900 underline-offset-8">Lives</span> Faster.</h1>
+            
+            <div class="mt-12 p-8 bg-white border border-slate-100 rounded-[3rem] shadow-2xl shadow-slate-200/50">
+                <h3 class="font-black text-red-600 mb-6 uppercase text-[10px] tracking-widest italic">Biomedical Registration</h3>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <input type="text" id="regName" placeholder="Legal Name" class="p-4 rounded-2xl bg-slate-50 border-none font-bold text-sm outline-none">
+                    <input type="text" id="regPhone" placeholder="Phone Number" class="p-4 rounded-2xl bg-slate-50 border-none font-bold text-sm outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <select id="regRole" class="p-4 rounded-2xl bg-slate-50 border-none font-bold text-sm text-slate-500 outline-none">
+                        <option value="donor">Donor Profile</option>
+                        <option value="hospital">Hospital Authority</option>
+                    </select>
+                    <select id="regBlood" class="p-4 rounded-2xl bg-slate-50 border-none font-bold text-sm text-slate-500 outline-none">
+                        <option value="">Blood Group</option>
+                        <option>O-</option><option>O+</option><option>B+</option><option>B-</option><option>AB+</option><option>A+</option>
+                    </select>
+                </div>
+                <button id="regBtn" class="w-full py-5 bg-red-600 text-white rounded-[1.5rem] font-black text-lg hover:bg-slate-900 transition-all uppercase tracking-widest">Connect to Cloud</button>
+            </div>
+        </div>
+
+        <div id="liveRequests" class="space-y-6 max-h-[600px] overflow-y-auto custom-scroll pr-2">
+             <p class="text-slate-400 font-bold text-center animate-pulse">Scanning Cloud for Live Requests...</p>
+        </div>
+    </main>
+
+    <section id="mapSection" class="max-w-7xl mx-auto px-6 md:px-16 py-12 hidden">
+        <div class="bg-slate-900 rounded-[3rem] p-10 overflow-hidden relative border border-red-900/30 shadow-2xl">
+            <div class="flex flex-col md:flex-row justify-between items-center gap-8 relative z-10">
+                <div class="w-full md:w-1/3 text-white">
+                    <span class="bg-red-600 text-white px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest animate-pulse">Live Transit</span>
+                    <h3 class="text-3xl font-black italic mt-4 mb-2">GPS Simulation</h3>
+                    <p class="text-slate-400 text-xs font-bold uppercase tracking-widest">ETA: <span id="eta" class="text-red-500">12 mins</span></p>
+                    <div class="mt-8 space-y-4">
+                        <div class="flex items-center gap-4 bg-slate-800 p-4 rounded-2xl border border-slate-700">
+                            <div class="w-2 h-2 bg-green-500 rounded-full animate-ping"></div>
+                            <p class="text-[10px] font-black uppercase tracking-widest">Donor in Transit</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="w-full md:w-2/3 h-64 bg-slate-800 rounded-[2rem] relative overflow-hidden border border-slate-700">
+                    <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(#9b111e 1px, transparent 1px); background-size: 30px 30px;"></div>
+                    <div id="donorDot" class="absolute w-4 h-4 bg-red-600 rounded-full shadow-[0_0_20px_#ef4444]" style="top: 80%; left: 10%;"></div>
+                    <div class="absolute w-6 h-6 border-2 border-white rounded-lg flex items-center justify-center" style="top: 20%; right: 20%;">
+                        <span class="text-[10px]">🏥</span>
+                    </div>
+                </div>
+            </div>
+            <button onclick="document.getElementById('mapSection').classList.add('hidden')" class="mt-8 text-slate-500 hover:text-white text-[9px] font-black uppercase tracking-[0.4em]">Terminate Tracking</button>
+        </div>
+    </section>
+
+    <section id="find-donors" class="max-w-7xl mx-auto px-6 md:px-16 py-20 bg-white rounded-[4rem] shadow-sm border border-slate-100">
+        <div class="flex flex-col md:flex-row justify-between items-center mb-12 gap-6">
+            <div>
+                <h2 class="text-4xl font-black tracking-tighter text-slate-900 italic uppercase">Find <span class="text-red-600">Donors</span></h2>
+                <p class="text-slate-400 font-bold text-xs uppercase tracking-widest mt-2">Verified Regional Matches</p>
+            </div>
+            <div class="flex gap-4 w-full md:w-auto">
+                <select id="searchBlood" class="p-4 rounded-2xl bg-slate-100 border-none font-bold text-xs outline-none">
+                    <option value="">All Groups</option>
+                    <option>O-</option><option>O+</option><option>B+</option><option>A+</option><option>AB+</option>
+                </select>
+                <input type="text" id="searchLoc" placeholder="Search Location" class="p-4 rounded-2xl bg-slate-100 border-none font-bold text-xs outline-none">
+                <button id="searchBtn" class="bg-slate-900 text-white px-8 rounded-2xl font-black text-[10px] uppercase tracking-widest">Filter</button>
+            </div>
+        </div>
+        <div id="donorList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+    </section>
+
+    <section id="broadcast" class="max-w-7xl mx-auto px-6 md:px-16 py-20">
+        <div class="bg-slate-900 rounded-[3rem] p-10 md:p-16 text-white shadow-2xl relative overflow-hidden">
+            <div class="relative z-10 flex flex-col md:flex-row justify-between items-end gap-8">
+                <div class="max-w-xl">
+                    <span class="text-red-500 font-black text-[10px] uppercase tracking-[0.3em] mb-4 block">Institutional Access</span>
+                    <h2 class="text-4xl md:text-5xl font-black italic tracking-tighter mb-6">Broadcast <span class="text-red-500">Alert</span></h2>
+                    <p class="text-slate-400 text-sm font-bold italic underline">Karur / Trichy / Erode Logistics Center</p>
+                </div>
+                <div class="w-full md:w-auto grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <select id="reqBlood" class="bg-slate-800 border-none rounded-2xl p-4 font-bold text-sm text-white outline-none">
+                        <option>O-</option><option>O+</option><option>B+</option><option>A+</option>
+                    </select>
+                    <input type="text" id="reqLoc" placeholder="Unit Name" class="bg-slate-800 border-none rounded-2xl p-4 font-bold text-sm text-white outline-none">
+                    <button id="broadcastBtn" class="sm:col-span-2 py-5 bg-red-600 text-white rounded-2xl font-black uppercase tracking-widest hover:bg-white hover:text-red-600 transition-all">Broadcast Emergency</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="network" class="max-w-7xl mx-auto px-6 md:px-16 py-24">
+        <h4 class="text-center text-[10px] font-black uppercase tracking-[0.8em] text-slate-300 mb-16 italic">Premium Healthcare Network</h4>
+        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">Apollo Hospitals</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">Fortis Healthcare</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">Kauvery Medical</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">MIOT International</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">MGM Healthcare</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">G.V. Health City</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">SIMS Hospital</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">Global Hospitals</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">Mehta Multispecialty</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">Billroth Hospitals</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">Vijaya Health</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">Ramachandra Med</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">Chettinad Health</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">Kovai Medical</div>
+            <div class="p-8 bg-white border-2 border-slate-100 rounded-[2rem] text-center font-black text-slate-800 uppercase text-[11px] shadow-sm hover:border-red-600 transition-all">KG Hospital</div>
+        </div>
+    </section>
+
+    <footer class="bg-slate-900 text-slate-500 py-12 text-center rounded-t-[4rem]">
+        <p class="text-[9px] font-black tracking-[0.8em] lowercase">bloodlink@gmal.com • BloodLink! • 2026</p>
+    </footer>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, serverTimestamp, where, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCXjM2F1RQYun08B6_rZBqdigYExRNzt40",
+            authDomain: "bloodlink-a97f1.firebaseapp.com",
+            projectId: "bloodlink-a97f1",
+            storageBucket: "bloodlink-a97f1.firebasestorage.app",
+            messagingSenderId: "524914855173",
+            appId: "1:524914855173:web:2f9db4b885e5a88dbdfb6c"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+
+        const showToast = (m) => { const t = document.getElementById('toast'); t.innerText = m; t.style.display = 'block'; setTimeout(() => t.style.display = 'none', 3000); };
+
+        // --- 1. LIVE REQUESTS SYNC ---
+        onSnapshot(query(collection(db, "requests"), orderBy("createdAt", "desc")), (snap) => {
+            const feed = document.getElementById('liveRequests');
+            feed.innerHTML = "";
+            snap.forEach(dSnap => {
+                const r = dSnap.data();
+                feed.innerHTML += `
+                    <div class="p-10 rounded-[3rem] bg-white border border-slate-100 shadow-xl relative overflow-hidden mb-4">
+                        <div class="absolute top-0 right-0 p-6 opacity-10 text-6xl">🩸</div>
+                        <h2 class="text-3xl font-black text-slate-800 italic tracking-tighter mb-6">${r.location}</h2>
+                        <div class="flex items-center justify-between bg-slate-50 p-6 rounded-3xl">
+                            <span class="text-4xl font-black text-red-600">${r.blood}</span>
+                            <button onclick="window.openEligibility()" class="bg-slate-900 text-white px-6 py-3 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-red-600 transition">Accept</button>
+                        </div>
+                    </div>`;
+            });
+        });
+
+        // --- 2. LIVE GPS SIMULATION ---
+        window.startTracking = () => {
+            const map = document.getElementById('mapSection');
+            const dot = document.getElementById('donorDot');
+            const eta = document.getElementById('eta');
+            map.classList.remove('hidden');
+            window.location.hash = "mapSection";
+            
+            let p = 0; let time = 12;
+            const move = setInterval(() => {
+                p += 5; time -= 0.5;
+                dot.style.left = (10 + p * 0.7) + "%";
+                dot.style.top = (80 - p * 0.6) + "%";
+                eta.innerText = Math.max(1, Math.round(time)) + " MINS";
+                if(p >= 100) { clearInterval(move); showToast("📍 ARRIVED AT DESTINATION"); eta.innerText = "ARRIVED"; }
+            }, 1000);
+        };
+
+        // --- 3. ELIGIBILITY LOGIC ---
+        window.openEligibility = () => document.getElementById('quizModal').classList.add('active');
+        document.getElementById('submitQuizBtn').onclick = () => {
+            const fail = document.getElementById('q1').checked || document.getElementById('q2').checked;
+            document.getElementById('quizModal').classList.remove('active');
+            if(fail) return showToast("❌ NOT ELIGIBLE AT THIS TIME");
+            showToast("✅ PASSED! STARTING LIVE TRANSIT...");
+            setTimeout(window.startTracking, 1500);
+        };
+
+        // --- 4. DONOR DIRECTORY ---
+        window.loadDonors = async (bFilter = "", lFilter = "") => {
+            const list = document.getElementById('donorList');
+            list.innerHTML = `<p class="col-span-3 text-center text-slate-400 font-bold py-10 animate-pulse uppercase text-[10px]">Scanning Database...</p>`;
+            const qSnap = await getDocs(query(collection(db, "users"), where("role", "==", "donor")));
+            list.innerHTML = "";
+            qSnap.forEach(dSnap => {
+                const d = dSnap.data();
+                if(bFilter && d.blood !== bFilter) return;
+                if(lFilter && !d.name.toLowerCase().includes(lFilter.toLowerCase())) return;
+                const dist = (Math.random() * 12 + 1).toFixed(1);
+                list.innerHTML += `
+                    <div class="bg-slate-50 p-8 rounded-[2.5rem] border border-slate-100 hover:shadow-2xl transition-all group">
+                        <div class="flex justify-between items-start mb-6">
+                            <div class="w-12 h-12 bg-red-600 text-white rounded-2xl flex items-center justify-center font-black text-xl">${d.blood}</div>
+                            <span class="text-[10px] font-black text-slate-400 uppercase">${dist} KM AWAY</span>
+                        </div>
+                        <h4 class="text-xl font-black text-slate-800">${d.name}</h4>
+                        <p class="text-[10px] font-bold text-slate-400 uppercase italic mb-6">Available Donor</p>
+                        <button class="w-full py-4 bg-white border border-slate-200 rounded-2xl font-black uppercase text-[9px] group-hover:bg-red-600 group-hover:text-white transition-all">Request Contact</button>
+                    </div>`;
+            });
+            if(!list.innerHTML) list.innerHTML = `<p class="col-span-3 text-center py-10 text-slate-400 font-bold uppercase text-[10px]">No matches found.</p>`;
+        };
+
+        // --- 5. REGISTRATION & BROADCAST ---
+        document.getElementById('regBtn').onclick = async () => {
+            const name = document.getElementById('regName').value;
+            const phone = document.getElementById('regPhone').value;
+            const role = document.getElementById('regRole').value;
+            const blood = document.getElementById('regBlood').value;
+            if(!name || !phone) return showToast("⚠️ FILL MISSING DETAILS");
+            try {
+                await addDoc(collection(db, "users"), { name, phone, role, blood, createdAt: serverTimestamp() });
+                showToast("🚀 REGISTERED ON CLOUD");
+                if(role === "donor") loadDonors();
+            } catch (e) { showToast("❌ FAILED"); }
+        };
+
+        document.getElementById('broadcastBtn').onclick = async () => {
+            const blood = document.getElementById('reqBlood').value;
+            const loc = document.getElementById('reqLoc').value;
+            if(!loc) return showToast("⚠️ ENTER UNIT NAME");
+            await addDoc(collection(db, "requests"), { blood, location: loc, createdAt: serverTimestamp() });
+            showToast("🚨 BROADCASTED SUCCESSFULLY");
+        };
+
+        document.getElementById('searchBtn').onclick = () => loadDonors(document.getElementById('searchBlood').value, document.getElementById('searchLoc').value);
+        loadDonors();
+    </script>
+
+</body></html>
